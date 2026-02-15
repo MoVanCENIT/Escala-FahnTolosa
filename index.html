@@ -15,12 +15,10 @@
         
         h1 { color: var(--azul-oscuro); text-align: center; margin-bottom: 5px; font-size: 1.8em; border-bottom: 2px solid var(--azul-oscuro); padding-bottom: 10px; }
         
-        /* Configuración de cabecera solicitada */
         .datos-clinicos { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; background: var(--gris-fondo); padding: 20px; border: 1px solid var(--azul-claro); border-radius: 6px; margin-bottom: 20px; }
         .field label { font-weight: bold; font-size: 0.9em; color: var(--azul-oscuro); display: block; margin-bottom: 5px; }
         input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         
-        /* Ajuste: Observaciones y Profesional en la misma línea */
         .full-width { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         textarea { height: 60px; resize: none; }
 
@@ -47,8 +45,9 @@
         .total-item span { display: block; font-size: 1.4em; font-weight: bold; color: var(--azul-claro); }
         .total-global-item { border-top: 1px solid #ffffff44; padding-top: 10px; margin-top: 10px; grid-column: 1 / -1; font-size: 1.1em; }
         
-        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        button.action-btn { flex: 1; padding: 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; background: var(--azul-medio); color: white; }
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+        button.action-btn { flex: 1; min-width: 150px; padding: 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; background: var(--azul-medio); color: white; }
+        button.reset-btn { background: #b33939; }
 
         #pdf-report { display: none; }
 
@@ -73,18 +72,18 @@
     <h1>Escala de Evaluación del Temblor - Fahn Tolosa</h1>
     
     <div class="datos-clinicos">
-        <div class="field"><label>Paciente:</label><input type="text" id="nombre"></div>
-        <div class="field"><label>Fecha:</label><input type="date" id="fecha"></div>
-        <div class="field"><label>Diagnóstico:</label><input type="text" id="diagnostico"></div>
+        <div class="field"><label>Paciente:</label><input type="text" id="nombre" class="autosave"></div>
+        <div class="field"><label>Fecha:</label><input type="date" id="fecha" class="autosave"></div>
+        <div class="field"><label>Diagnóstico:</label><input type="text" id="diagnostico" class="autosave"></div>
         
         <div class="full-width">
             <div class="field">
                 <label>Profesional que realiza la escala:</label>
-                <input type="text" id="profesional">
+                <input type="text" id="profesional" class="autosave">
             </div>
             <div class="field">
                 <label>Observaciones Clínicas:</label>
-                <textarea id="obs"></textarea>
+                <textarea id="obs" class="autosave"></textarea>
             </div>
         </div>
     </div>
@@ -135,16 +134,14 @@
         </div>
         <div class="btn-group">
             <button class="action-btn" onclick="prepararEImprimir()">Imprimir / Guardar PDF</button>
+            <button class="action-btn reset-btn" onclick="resetForm()">Limpiar Formulario</button>
         </div>
     </div>
 </div>
 
 <script>
-document.getElementById('fecha').valueAsDate = new Date();
-
-// RESTAURADAS RESPUESTAS COMPLETAS
+// Configuración y Datos Originales
 const escalaA = ["0: Normal.", "1: Leve (apenas perceptible).", "2: Moderado (amplitud < 2 cm).", "3: Marcado (amplitud entre 2 y 4 cm).", "4: Grave (amplitud > 4 cm)."];
-
 const configA = [
     { t: "Temblor facial", s: ["De reposo", "Postural"] },
     { t: "Temblor lingual", s: ["De reposo", "Postural"] },
@@ -157,9 +154,7 @@ const configA = [
     { t: "M.I. Izquierdo", s: ["De reposo", "Postural", "Acción"] },
     { t: "Temblor ortostático", s: ["Postural"] }
 ];
-
 const escDibujo = ["0: Normal.", "1: Levemente tembloroso (puede cruzar líneas ocasionalmente).", "2: Moderadamente tembloroso o cruza líneas frecuentemente.", "3: Realiza la tarea con gran dificultad y muchos errores.", "4: Incapaz de completar la tarea."];
-
 const configB = [
     { t: "Escritura", s: ["Derecha", "Izquierda"], op: ["0: Normal.", "1: Levemente anormal. Escritura algo desordenada o temblorosa.", "2: Moderadamente anormal. Legible, pero con temblor considerable.", "3: Marcadamente anormal. Ilegible.", "4: Gravemente anormal. Incapaz de mantener lápiz sobre papel."] },
     { t: "Dibujo A: espiral grande", s: ["Derecha", "Izquierda"], op: escDibujo },
@@ -167,7 +162,6 @@ const configB = [
     { t: "Dibujo C: rectas", s: ["Derecha", "Izquierda"], op: escDibujo },
     { t: "Manejo de Vasos", s: ["Derecha", "Izquierda"], op: ["0: Normal.", "1: Con más cuidado que lo habitual, pero sin derramar agua.", "2: Derrama una pequeña cantidad de agua (hasta 10% del total).", "3: Derrama bastante agua (10-50%).", "4: Incapaz de hacerlo sin derramar casi todo el líquido."] }
 ];
-
 const configC = [
     { t: "Hablar", s: ["Voz"], op: ["0: Normal.", "1: Temblor de voz leve, solo al estar nervioso.", "2: Temblor de voz leve, constante.", "3: Temblor de voz moderado.", "4: Temblor de voz grave. Algunas palabras son difíciles de entender."] },
     { t: "Comer", s: ["Alimentación"], op: ["0: Normal.", "1: Levemente anormal. Puede llevar sólidos, derramándolos raramente.", "2: Moderadamente anormal. Derrama guisantes o similares. Adelanta cabeza.", "3: Marcadamente anormal. Incapaz de cortar o precisa usar las dos manos.", "4: Gravemente anormal. Necesita ayuda para alimentarse."] },
@@ -185,8 +179,10 @@ function render(id, datos, escalaBase) {
         const escala = preg.op || escalaBase;
         let html = `<div class="pregunta-card"><div class="titulo-preg"><span>${preg.t}</span><span class="subtotal-preg" id="sub-${id}-${pIdx}">NE</span></div><div class="cuerpo-preg">`;
         preg.s.forEach((sec) => {
+            // El ID único ayuda al autoguardado
+            const uniqueId = `sel-${id}-${pIdx}-${sec.replace(/\s/g, '')}`;
             html += `<div class="sub-seccion"><label>${sec}</label>
-            <select class="score-input ne-style" data-secc="${id}" data-parent="${pIdx}" data-label="${sec}" onchange="cambioSelect(this)">
+            <select id="${uniqueId}" class="score-input ne-style autosave" data-secc="${id}" data-parent="${pIdx}" data-label="${sec}" onchange="cambioSelect(this)">
             <option value="NE" selected>-- No evaluado --</option>
             ${escala.map((t, i) => `<option value="${i}">${t}</option>`).join('')}</select></div>`;
         });
@@ -198,6 +194,7 @@ function cambioSelect(el) {
     if (el.value === "NE") el.classList.add('ne-style');
     else el.classList.remove('ne-style');
     calcular();
+    saveAllData();
 }
 
 function showTab(tab) {
@@ -209,18 +206,15 @@ function showTab(tab) {
 function calcular() {
     let tA = 0, tB = 0, tC = 0;
     let pdfRows = "";
-
     const process = (id, config, label) => {
         let totalSecc = 0;
         let seccEvaluada = false;
         let tempRows = `<tr><th colspan="3" style="background:#eee; font-size:9pt">PARTE ${label}</th></tr>`;
-
         config.forEach((p, i) => {
             let suma = 0;
             let detalles = [];
             let itemEvaluado = false;
             const selects = document.querySelectorAll(`.score-input[data-secc="${id}"][data-parent="${i}"]`);
-            
             selects.forEach(s => {
                 if(s.value !== "NE") {
                     suma += parseInt(s.value);
@@ -228,7 +222,6 @@ function calcular() {
                     detalles.push(`${s.dataset.label}: ${s.value}`);
                 }
             });
-
             if(id === 'parteB' && p.t === "Escritura") {
                 const v1 = selects[0].value;
                 const v2 = selects[1].value;
@@ -236,7 +229,6 @@ function calcular() {
                     suma = Math.max(v1 === "NE" ? 0 : parseInt(v1), v2 === "NE" ? 0 : parseInt(v2));
                 }
             }
-
             const subLabel = document.getElementById(`sub-${id}-${i}`);
             if(itemEvaluado) {
                 subLabel.innerText = `${suma} pts`;
@@ -244,26 +236,54 @@ function calcular() {
                 totalSecc += suma;
             } else { subLabel.innerText = "NE"; }
         });
-
         if(seccEvaluada) { pdfRows += tempRows; }
         return { total: totalSecc, eval: seccEvaluada };
     };
-
     const resA = process('parteA', configA, 'A');
     const resB = process('parteB', configB, 'B');
     const resC = process('parteC', configC, 'C');
-
-    // CORRECCIÓN DE TOTALES: Parte A 88, Global 156
     document.getElementById('total-A').innerText = resA.eval ? `${resA.total} / 88` : "NE";
     document.getElementById('total-B').innerText = resB.eval ? `${resB.total} / 36` : "NE";
     document.getElementById('total-C').innerText = resC.eval ? `${resC.total} / 32` : "NE";
     document.getElementById('total-global').innerText = `${resA.total + resB.total + resC.total} / 156`;
-    
     document.getElementById('pdf-table-body').innerHTML = pdfRows;
     document.getElementById('pdf-tA').innerText = resA.eval ? resA.total : "NE";
     document.getElementById('pdf-tB').innerText = resB.eval ? resB.total : "NE";
     document.getElementById('pdf-tC').innerText = resC.eval ? resC.total : "NE";
     document.getElementById('pdf-tGlobal').innerText = (resA.total + resB.total + resC.total) + " / 156";
+}
+
+// FUNCIONES DE PERSISTENCIA (LOCALSTORAGE)
+function saveAllData() {
+    const data = {};
+    document.querySelectorAll('.autosave').forEach(el => {
+        data[el.id] = el.value;
+    });
+    localStorage.setItem('fahnTolosaData', JSON.stringify(data));
+}
+
+function loadAllData() {
+    const saved = localStorage.getItem('fahnTolosaData');
+    if (saved) {
+        const data = JSON.parse(saved);
+        Object.keys(data).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.value = data[id];
+                if (el.tagName === 'SELECT' && el.value !== "NE") {
+                    el.classList.remove('ne-style');
+                }
+            }
+        });
+        calcular();
+    }
+}
+
+function resetForm() {
+    if (confirm("¿Estás seguro de que quieres borrar todos los datos actuales?")) {
+        localStorage.removeItem('fahnTolosaData');
+        location.reload();
+    }
 }
 
 function prepararEImprimir() {
@@ -275,10 +295,22 @@ function prepararEImprimir() {
     window.print();
 }
 
+// Inicialización
 render('parteA', configA, escalaA);
 render('parteB', configB, null);
 render('parteC', configC, null);
-calcular();
+
+// Listener para inputs de texto
+document.querySelectorAll('input.autosave, textarea.autosave').forEach(el => {
+    el.addEventListener('input', saveAllData);
+});
+
+// Cargar datos al iniciar
+window.onload = () => {
+    document.getElementById('fecha').valueAsDate = new Date();
+    loadAllData();
+};
+
 </script>
 </body>
 </html>
