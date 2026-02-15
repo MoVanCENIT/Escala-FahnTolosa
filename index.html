@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fahn-Tolosa - Evaluación Integral</title>
+    <style>
+        :root { 
+            --azul-oscuro: #0a2558; --azul-medio: #1e56a0; --azul-claro: #d6e4f0;
+            --gris-fondo: #f9f9f9; --blanco: #ffffff;
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--azul-claro); color: #333; margin: 0; padding: 15px; }
+        .container { max-width: 900px; margin: auto; background: var(--blanco); padding: 25px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        
+        h1 { color: var(--azul-oscuro); text-align: center; margin-bottom: 5px; font-size: 1.8em; border-bottom: 2px solid var(--azul-oscuro); padding-bottom: 10px; }
+        
+        .tabs { display: flex; justify-content: center; margin-bottom: 20px; gap: 5px; }
+        .tab-btn { padding: 12px; cursor: pointer; border: none; background: #ccc; color: #666; font-weight: bold; border-radius: 5px 5px 0 0; flex: 1; text-align: center; }
+        .tab-btn.active { background: var(--azul-oscuro); color: white; }
+
+        .datos-clinicos { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; background: var(--gris-fondo); padding: 20px; border: 1px solid var(--azul-claro); border-radius: 6px; margin-bottom: 20px; }
+        .field label { font-weight: bold; font-size: 0.9em; color: var(--azul-oscuro); display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+
+        .seccion-contenido { display: none; }
+        .seccion-contenido.active { display: block; }
+
+        .pregunta-card { border: 1px solid #e1e8ed; margin-bottom: 15px; border-radius: 6px; overflow: hidden; }
+        .titulo-preg { background: var(--azul-oscuro); color: var(--blanco); padding: 10px 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .subtotal-preg { background: var(--azul-claro); color: var(--azul-oscuro); padding: 2px 10px; border-radius: 4px; font-size: 0.9em; }
+        
+        .cuerpo-preg { padding: 15px; }
+        .sub-seccion { margin-bottom: 12px; }
+        .sub-seccion label { font-size: 0.85em; font-weight: bold; color: var(--azul-medio); display: block; margin-bottom: 5px; }
+        
+        select { width: 100%; padding: 10px; border: 1px solid var(--azul-claro); border-radius: 4px; font-size: 0.9em; background: #fff; }
+        select.ne-style { color: #888; font-style: italic; }
+
+        .footer-totales { margin-top: 30px; padding: 20px; background: var(--azul-oscuro); color: white; border-radius: 8px; }
+        .totales-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; text-align: center; }
+        .total-item span { display: block; font-size: 1.4em; font-weight: bold; color: var(--azul-claro); }
+        .total-global-item { border-top: 1px solid #ffffff44; padding-top: 10px; margin-top: 10px; grid-column: 1 / -1; font-size: 1.1em; }
+        
+        .observaciones { margin: 20px 0; }
+        textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; resize: none; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        button.action-btn { flex: 1; padding: 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; background: var(--azul-medio); color: white; }
+
+        #pdf-report { display: none; }
+
+        @media print {
+            @page { size: portrait; margin: 1cm; }
+            .no-print, .tabs, .pregunta-card, .btn-group { display: none !important; }
+            .container { box-shadow: none; border: none; width: 100%; padding: 0; }
+            #pdf-report { display: block !important; }
+            .pdf-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt; }
+            .pdf-table th, .pdf-table td { border: 1px solid #ddd; padding: 5px; text-align: left; }
+            .pdf-table th { background: #f2f2f2; }
+            .footer-totales { background: white !important; color: black !important; border: 2px solid black; }
+            .total-item span { color: black !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Escala de Evaluación del Temblor - Fahn Tolosa</h1>
+    
+    <div class="datos-clinicos">
+        <div class="field"><label>Paciente:</label><input type="text" id="nombre"></div>
+        <div class="field"><label>Fecha:</label><input type="date" id="fecha"></div>
+        <div class="field"><label>Diagnóstico:</label><input type="text" id="diagnostico"></div>
+    </div>
+
+    <div class="tabs no-print">
+        <div class="tab-btn active" onclick="showTab('parteA')">PARTE A</div>
+        <div class="tab-btn" onclick="showTab('parteB')">PARTE B</div>
+        <div class="tab-btn" onclick="showTab('parteC')">PARTE C</div>
+    </div>
+
+    <div id="parteA" class="seccion-contenido active"></div>
+    <div id="parteB" class="seccion-contenido"></div>
+    <div id="parteC" class="seccion-contenido"></div>
+
+    <div id="pdf-report">
+        <h3 style="text-align:center; border-bottom: 1px solid #000; margin-bottom: 10px;">Resumen de Evaluación Detallado</h3>
+        <table class="pdf-table">
+            <thead><tr><th style="width:25%">Sección / Ítem</th><th>Valores Evaluados</th><th style="width:10%">Pts</th></tr></thead>
+            <tbody id="pdf-table-body"></tbody>
+        </table>
+    </div>
+
+    <div class="observaciones">
+        <label style="font-weight:bold; color: var(--azul-oscuro);">Observaciones Clínicas:</label>
+        <textarea id="obs"></textarea>
+    </div>
+
+    <div class="footer-totales">
+        <div class="totales-grid">
+            <div class="total-item">PARTE A <span id="total-A">NE</span></div>
+            <div class="total-item">PARTE B <span id="total-B">NE</span></div>
+            <div class="total-item">PARTE C <span id="total-C">NE</span></div>
+            <div class="total-item total-global-item">TOTAL GLOBAL (A+B+C) <span id="total-global">0 / 148</span></div>
+        </div>
+        <div class="btn-group no-print">
+            <button class="action-btn" onclick="window.print()">Imprimir / Guardar PDF</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('fecha').valueAsDate = new Date();
+
+const escalaA = ["0: Normal.", "1: Leve (apenas perceptible).", "2: Moderado (amplitud < 2 cm).", "3: Marcado (amplitud entre 2 y 4 cm).", "4: Grave (amplitud > 4 cm)."];
+
+const configA = [
+    { t: "Temblor facial", s: ["De reposo", "Postural"] },
+    { t: "Temblor lingual", s: ["De reposo", "Postural"] },
+    { t: "Temblor de la voz", s: ["Acción"] },
+    { t: "Temblor de la cabeza", s: ["De reposo", "Postural"] },
+    { t: "M.S. Derecho", s: ["De reposo", "Postural", "Acción"] },
+    { t: "M.S. Izquierdo", s: ["De reposo", "Postural", "Acción"] },
+    { t: "Tronco", s: ["De reposo", "Postural"] },
+    { t: "M.I. Derecho", s: ["De reposo", "Postural", "Acción"] },
+    { t: "M.I. Izquierdo", s: ["De reposo", "Postural", "Acción"] },
+    { t: "Temblor ortostático", s: ["Postural"] }
+];
+
+const escDibujo = ["0: Normal.", "1: Levemente tembloroso (puede cruzar líneas ocasionalmente).", "2: Moderadamente tembloroso o cruza líneas frecuentemente.", "3: Realiza la tarea con gran dificultad y muchos errores.", "4: Incapaz de completar la tarea."];
+
+const configB = [
+    { t: "Escritura", s: ["Derecha", "Izquierda"], op: ["0: Normal.", "1: Levemente anormal. Escritura algo desordenada o temblorosa.", "2: Moderadamente anormal. Legible, pero con temblor considerable.", "3: Marcadamente anormal. Ilegible.", "4: Gravemente anormal. Incapaz de mantener lápiz sobre papel."] },
+    { t: "Dibujo A: espiral grande", s: ["Derecha", "Izquierda"], op: escDibujo },
+    { t: "Dibujo B: espiral pequeño", s: ["Derecha", "Izquierda"], op: escDibujo },
+    { t: "Dibujo C: rectas", s: ["Derecha", "Izquierda"], op: escDibujo },
+    { t: "Manejo de Vasos", s: ["Derecha", "Izquierda"], op: ["0: Normal.", "1: Con más cuidado que lo habitual, pero sin derramar agua.", "2: Derrama una pequeña cantidad de agua (hasta 10% del total).", "3: Derrama bastante agua (10-50%).", "4: Incapaz de hacerlo sin derramar casi todo el líquido."] }
+];
+
+const configC = [
+    { t: "Hablar", s: ["Voz"], op: ["0: Normal.", "1: Temblor de voz leve, solo al estar nervioso.", "2: Temblor de voz leve, constante.", "3: Temblor de voz moderado.", "4: Temblor de voz grave. Algunas palabras son difíciles de entender."] },
+    { t: "Comer", s: ["Alimentación"], op: ["0: Normal.", "1: Levemente anormal. Puede llevar sólidos, derramándolos raramente.", "2: Moderadamente anormal. Derrama guisantes o similares. Adelanta cabeza.", "3: Marcadamente anormal. Incapaz de cortar o precisa usar las dos manos.", "4: Gravemente anormal. Necesita ayuda para alimentarse."] },
+    { t: "Beber", s: ["Líquidos"], op: ["0: Normal.", "1: Levemente anormal. Puede usar cuchara, pero no llena.", "2: Moderadamente anormal. Incapaz de usar cuchara. Usa tazas o vasos.", "3: Marcadamente anormal. Bebe de vaso pero necesita las dos manos.", "4: Gravemente anormal. Debe usar una pajita."] },
+    { t: "Asearse", s: ["Higiene"], op: ["0: Normal.", "1: Levemente anormal. Capaz de todo, pero con más cuidado.", "2: Moderadamente anormal. Capaz con errores; usa maquinilla eléctrica.", "3: Marcadamente anormal. Incapaz de tareas precisas sin usar ambas manos.", "4: Gravemente anormal. Incapaz de realizar cualquier tarea precisa."] },
+    { t: "Vestirse", s: ["Vestimenta"], op: ["0: Normal.", "1: Levemente anormal. Capaz de todo, pero con más cuidado.", "2: Moderadamente anormal. Capaz de hacerlo todo, pero con errores.", "3: Marcadamente anormal. Necesita ayuda para botones y cordones.", "4: Gravemente anormal. Requiere ayuda incluso para actividades groseras."] },
+    { t: "Escribir", s: ["Funcionalidad"], op: ["0: Normal.", "1: Levemente anormal. Legible, capaz de escribir cartas.", "2: Moderadamente anormal. Legible, pero ya no escribe cartas.", "3: Marcadamente anormal. Ilegible.", "4: Gravemente anormal. Incapaz de firmar."] },
+    { t: "Trabajar", s: ["Laboral"], op: ["0: El temblor no interfiere con el trabajo.", "1: Capaz de trabajar, pero necesita ser más cuidadoso.", "2: Capaz de hacerlo todo, pero con errores. Menor rendimiento.", "3: Incapaz de desempeñar trabajo habitual. Limita tareas del hogar.", "4: Incapaz de realizar cualquier trabajo."] },
+    { t: "Actividades sociales", s: ["Social"], op: ["0: Sin cambios.", "1: Cambio mínimo en las actividades sociales.", "2: Cambio moderado, evita encuentros con desconocidos.", "3: Cambio marcado, evita encuentros con amigos.", "4: Cambio grave, evita cualquier encuentro público."] }
+];
+
+function render(id, datos, escalaBase) {
+    const contenedor = document.getElementById(id);
+    datos.forEach((preg, pIdx) => {
+        const escala = preg.op || escalaBase;
+        let html = `<div class="pregunta-card"><div class="titulo-preg"><span>${preg.t}</span><span class="subtotal-preg" id="sub-${id}-${pIdx}">NE</span></div><div class="cuerpo-preg">`;
+        preg.s.forEach((sec) => {
+            html += `<div class="sub-seccion"><label>${sec}</label>
+            <select class="score-input ne-style" data-secc="${id}" data-parent="${pIdx}" data-label="${sec}" onchange="cambioSelect(this)">
+            <option value="NE" selected>-- No evaluado --</option>
+            ${escala.map((t, i) => `<option value="${i}">${t}</option>`).join('')}</select></div>`;
+        });
+        contenedor.innerHTML += html + `</div></div>`;
+    });
+}
+
+function cambioSelect(el) {
+    if (el.value === "NE") el.classList.add('ne-style');
+    else el.classList.remove('ne-style');
+    calcular();
+}
+
+function showTab(tab) {
+    document.querySelectorAll('.seccion-contenido, .tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tab).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+
+function calcular() {
+    let tA = 0, tB = 0, tC = 0;
+    let anyA = false, anyB = false, anyC = false;
+    let pdfRows = "";
+
+    const process = (id, config, label) => {
+        let totalSecc = 0;
+        let seccEvaluada = false;
+        let tempRows = `<tr><th colspan="3" style="background:#f0f0f0">PARTE ${label}</th></tr>`;
+
+        config.forEach((p, i) => {
+            let suma = 0;
+            let detalles = [];
+            let itemEvaluado = false;
+            const selects = document.querySelectorAll(`.score-input[data-secc="${id}"][data-parent="${i}"]`);
+            
+            selects.forEach(s => {
+                if(s.value !== "NE") {
+                    suma += parseInt(s.value);
+                    itemEvaluado = seccEvaluada = true;
+                    detalles.push(`${s.dataset.label}: ${s.value}`);
+                }
+            });
+
+            if(id === 'parteB' && p.t === "Escritura") {
+                const v1 = selects[0].value;
+                const v2 = selects[1].value;
+                if(v1 !== "NE" || v2 !== "NE") {
+                    suma = Math.max(v1 === "NE" ? 0 : parseInt(v1), v2 === "NE" ? 0 : parseInt(v2));
+                }
+            }
+
+            const subLabel = document.getElementById(`sub-${id}-${i}`);
+            if(itemEvaluado) {
+                subLabel.innerText = `${suma} pts`;
+                tempRows += `<tr><td>${p.t}</td><td>${detalles.join(' | ')}</td><td>${suma}</td></tr>`;
+                totalSecc += suma;
+            } else { subLabel.innerText = "NE"; }
+        });
+
+        if(!seccEvaluada) {
+            pdfRows += `<tr><th colspan="3" style="background:#f0f0f0">PARTE ${label}</th></tr><tr><td colspan="3" style="text-align:center; color:#999 italic;">No evaluada</td></tr>`;
+        } else { pdfRows += tempRows; }
+        return { total: totalSecc, eval: seccEvaluada };
+    };
+
+    const resA = process('parteA', configA, 'A');
+    const resB = process('parteB', configB, 'B');
+    const resC = process('parteC', configC, 'C');
+
+    document.getElementById('total-A').innerText = resA.eval ? `${resA.total} / 80` : "NE";
+    document.getElementById('total-B').innerText = resB.eval ? `${resB.total} / 36` : "NE";
+    document.getElementById('total-C').innerText = resC.eval ? `${resC.total} / 32` : "NE";
+    document.getElementById('total-global').innerText = `${resA.total + resB.total + resC.total} / 148`;
+    document.getElementById('pdf-table-body').innerHTML = pdfRows;
+}
+
+render('parteA', configA, escalaA);
+render('parteB', configB, null);
+render('parteC', configC, null);
+calcular();
+</script>
+</body>
+</html>
